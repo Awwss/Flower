@@ -1,0 +1,179 @@
+<!DOCTYPE HTML>
+<HTML>
+<HEAD>
+    <TITLE>Flower</TITLE>
+    <script type="text/javascript" src="jsc3d.js"></script>
+    <script type="text/javascript" src="jsc3d.webgl.js"></script>
+    <script type="text/javascript" src="jsc3d.touch.js"></script>
+</HEAD>
+
+<BODY>
+    <div style="max-width:100%; max-height:100%; margin:auto; position:relative;">
+		<input Class='Stem' type='checkbox' onclick='Stem(this.checked);' checked name='Stem'>Stem
+		<input type='checkbox' onclick='Leafs(this.checked);' checked>Leafs
+		<input type='checkbox' onclick='Flower(this.checked);' checked>Petals
+		<input type="checkbox" name="checkfield" id="ClickHide"  onchange="doalert(this)"/>Click to hide?
+		<input type="checkbox" name="checkfield" id="ClickTransparent"  onchange="MakeTransparent(this)"/>Transparent on click?
+		<button type='button' onclick='DefaultView(this.checked);' checked>Default view</button>
+		<button type='button' onclick='TopView(this.checked);' checked>Top view</button>
+		<button type='button' onclick='IsometricView(this.checked);' checked>Isometric view</button>
+		<button type='button' onclick='ShowAll(this.checked);' checked>Show all</button>
+        <canvas id="cv" style="border: 1px solid;" width=100% height=100%>
+            It seems you are using an outdated browser that does not support canvas :-(
+        </canvas>
+		
+    </div>
+
+    <script type="text/javascript">
+    var canvas = document.getElementById('cv');
+	canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    var viewer = new JSC3D.Viewer(canvas);
+
+    var components = ['Flower.obj', 'Flower.obj'];
+    var theScene = new JSC3D.Scene;
+    var numOfLoaded = 0;
+	var Click2hide = 0;
+	var Click2Transparent = 0;
+    var onModelLoaded = function(scene) {
+        var meshes = scene.getChildren();
+        for (var i=0; i<meshes.length; i++) {
+            theScene.addChild(meshes[i]);
+        }
+        if (++numOfLoaded == components.length)
+            viewer.replaceScene(theScene);
+    };
+    for (var i=0; i < components.length; i++) {
+	    if (components[i] == 'Leaf.stl') {
+		var loader = new JSC3D.StlLoader;
+        loader.onload = onModelLoaded;
+        loader.loadFromUrl(components[i]);
+		} else {
+        var loader2 = new JSC3D.ObjLoader;
+        loader2.onload = onModelLoaded;
+        loader2.loadFromUrl(components[i]);
+		}
+    }
+	
+    viewer.setParameter('ModelColor', '#FF0000');
+    viewer.setParameter('BackgroundColor1', '#b7b7b7');
+    viewer.setParameter('BackgroundColor2', '#ffffff');
+    viewer.setParameter('Renderer', 'webgl');
+	viewer.setParameter('InitRotationX', '-90');
+	viewer.setParameter('zoomFactor', '5000');
+    viewer.init();
+	viewer.zoomFactor = 5000;
+    viewer.update();
+	
+	function Stem(checked) {
+	viewer.scene.children[2].visible = checked;
+	viewer.scene.children[7].visible = checked;
+	viewer.update();
+	}
+	
+	function Leafs(checked) {
+	viewer.scene.children[3].visible = checked;
+	viewer.scene.children[8].visible = checked;
+	viewer.scene.children[4].visible = checked;
+	viewer.scene.children[9].visible = checked;
+	viewer.update();
+	}
+	
+	function Flower(checked) {
+	viewer.scene.children[0].visible = checked;
+	viewer.scene.children[5].visible = checked;
+	viewer.scene.children[1].visible = checked;
+	viewer.scene.children[6].visible = checked;
+	viewer.update();
+	}
+	
+    function DefaultView(checked) {
+	viewer.zoomFactor = 8369.92239665476;
+	viewer.setRotations(-90,0,0);
+	viewer.panning[0] = 0;
+	viewer.panning[1] = 0;
+	viewer.update();
+	}
+	
+	function TopView(checked) {
+	viewer.zoomFactor = 8369.92239665476;
+    viewer.setRotations(0,0,0);
+	viewer.panning[0] = 0;
+	viewer.panning[1] = 0;
+	viewer.update();
+	}
+	
+	function IsometricView(checked) {
+	viewer.zoomFactor = 5000;
+    viewer.setRotations(-50,30,10);
+	viewer.panning[0] = 0;
+	viewer.panning[1] = 0;
+	viewer.update();
+	}
+	
+	function doalert(checkboxElem) {
+	  if (checkboxElem.checked) {
+		Click2hide = 1;
+		 document.getElementById("ClickTransparent").checked = false;
+		 Click2Transparent = 0;
+	  } else {
+		Click2hide = 0;
+	  }
+	}
+	
+	function MakeTransparent(checkboxElem) {
+	  if (checkboxElem.checked) {
+		Click2Transparent = 1;
+		document.getElementById("ClickHide").checked = false;
+		Click2hide = 0;
+	  } else {
+		Click2Transparent = 0;
+	  }
+	}
+	
+	function ShowAll(checked) {
+	for (var i=0; i < viewer.scene.children.length; i++) {
+	viewer.scene.children[i].visible = true;
+	viewer.scene.children[i].material.transparency = 0;
+	viewer.update();
+	}
+	}
+	
+	viewer.onmouseup = onViewerMouseDown;
+	function onViewerMouseDown(x, y, button, depth, mesh) {     
+    if (button == 0/*left button down*/ && mesh != null) {
+        var meshName = mesh.name;
+		if (Click2hide == 0 && Click2Transparent == 0) {
+		if (meshName == "obj-1" || meshName == "obj-2") {
+		alert("Petals");
+		} else if (meshName == "obj-4" || meshName == "obj-5") {
+		alert("Leafs");
+		} else if (meshName == "obj-3") {
+		alert("Stem");
+		}
+        var pivot = mesh.aabb.center();
+        /* do something with the selected mesh */
+        console.log('Mesh center: ' + JSON.stringify(pivot) + mesh.name + mesh.visiblity);
+		} else if (Click2hide == 1) {
+	
+		for (var i=0; i < viewer.scene.children.length; i++) {
+		if (mesh.name == viewer.scene.children[i].name) {
+		viewer.scene.children[i].visible = false;
+		viewer.update();
+		
+		}
+		}
+		} else if (Click2Transparent == 1) {
+		for (var i=0; i < viewer.scene.children.length; i++) {
+		if (mesh.name == viewer.scene.children[i].name) {
+		viewer.scene.children[i].material.transparency = 0.7;
+		viewer.update();
+		}
+		}
+	}
+	}
+	}
+    </script>
+
+</BODY>
+</HTML>
